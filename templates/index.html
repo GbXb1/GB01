@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>GB01 - 학생 정보 검색</title>
+</head>
+<body>
+
+    <h1>🔒 학생 개인정보 필터링 시스템 (GB01)</h1>
+    <p>검색할 학생의 조건을 입력하세요. (3명 이하 검색 시 정보 보호를 위해 차단됩니다.)</p>
+
+    <hr>
+
+    <form action="/search" method="POST">
+        <label for="age">나이: </label>
+        <input type="number" id="age" name="age" placeholder="예: 17" required>
+        <br><br>
+
+        <label for="region">지역: </label>
+        <input type="text" id="region" name="region" placeholder="예: 서울" required>
+        <br><br>
+
+        <label for="club">동아리: </label>
+        <input type="text" id="club" name="club" placeholder="예: 밴드부" required>
+        <br><br>
+
+        <button type="submit">검색하기</button>
+    </form>
+
+    <hr>
+
+    <h2>🔍 검색 결과</h2>
+    <div style="background-color: #f0f0f0; padding: 15px; border-radius: 5px;">
+        <p><strong>결과:</strong> {{ result_message }}</p>
+    </div>
+
+</body>
+</html>
