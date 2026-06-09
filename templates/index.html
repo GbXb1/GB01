@@ -19,32 +19,34 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            padding: 40px;
+            justify-content: center; /* 💻 노트북 화면 수직 중앙 정렬 */
+            align-items: center;
+            padding: 40px 20px;
         }
 
         /* 🔝 1. 상단 타이틀 영역 */
         header {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 35px;
+            width: 100%;
         }
 
         header h1 {
-            font-size: 2.2rem;
+            font-size: 2.4rem;
             font-weight: 700;
             letter-spacing: -0.5px;
             color: #38bdf8; /* 밝은 블루 포인트 */
-            text-shadow: 0 2px 10px rgba(56, 189, 248, 0.2);
+            text-shadow: 0 2px 12px rgba(56, 189, 248, 0.25);
         }
 
         /* 🗂️ 메인 콘텐츠 레이아웃 (좌우 2분할) */
         .container {
             display: grid;
-            grid-template-columns: 1fr 1fr; /* 5:5 정확한 반반 분할 */
+            grid-template-columns: 1fr 1fr; /* 5:5 비율 정분할 */
             gap: 40px;
             max-width: 1400px;
-            margin: 0 auto;
             width: 100%;
-            align-items: start;
+            align-items: stretch; /* 좌우 판넬 높이 균등화 */
         }
 
         /* 공통 카드 스타일 */
@@ -52,30 +54,31 @@
             background-color: #1e293b; /* 약간 밝은 네이비 */
             border: 1px solid #334155;
             border-radius: 16px;
-            padding: 30px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            padding: 35px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; /* 내부 요소 간격 최적화 */
         }
 
         /* ⬅️ 2. 왼쪽 영역 (설명 + 대시보드 현황) */
         .left-side {
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
+            gap: 30px;
         }
 
         .intro-box h2 {
-            font-size: 1.4rem;
+            font-size: 1.5rem;
             color: #e2e8f0;
-            margin-bottom: 14px;
+            margin-bottom: 16px;
             border-left: 4px solid #38bdf8;
-            padding-left: 10px;
+            padding-left: 12px;
         }
 
         .intro-box p {
             color: #94a3b8;
-            line-height: 1.7;
-            font-size: 1rem;
-            margin-bottom: 12px;
+            line-height: 1.75;
+            font-size: 1.05rem;
+            margin-bottom: 14px;
         }
 
         /* 현황판 3개 카드 세로 배치 */
@@ -83,13 +86,14 @@
             display: flex;
             flex-direction: column;
             gap: 16px;
+            margin-top: auto; /* 하단 밀착 */
         }
 
         .status-card {
             background-color: #0f172a;
             border: 1px solid #334155;
             border-radius: 12px;
-            padding: 20px;
+            padding: 22px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -97,12 +101,12 @@
 
         .status-card .label {
             color: #94a3b8;
-            font-size: 0.95rem;
+            font-size: 1rem;
         }
 
         .status-card .value {
             font-weight: 600;
-            font-size: 1.1rem;
+            font-size: 1.15rem;
         }
 
         /* 서버 상태 라이브 포인트 효과 */
@@ -125,20 +129,21 @@
 
         /* ➡️ 3. 오른쪽 영역 (조건 선택 및 결과) */
         .right-side {
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
+            gap: 20px;
         }
 
-        .form-group {
-            margin-bottom: 20px;
+        .form-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
         }
 
         .form-group label {
             display: block;
             margin-bottom: 8px;
             color: #94a3b8;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
+            font-weight: 500;
         }
 
         select {
@@ -151,36 +156,38 @@
             font-size: 1rem;
             outline: none;
             cursor: pointer;
-            transition: border-color 0.2s;
+            transition: all 0.2s;
         }
 
         select:focus {
             border-color: #38bdf8;
+            box-shadow: 0 0 8px rgba(56, 189, 248, 0.2);
         }
 
         /* 요청 버튼 */
         .btn-submit {
             width: 100%;
-            padding: 14px;
+            padding: 15px;
             background-color: #38bdf8;
             color: #0f172a;
             border: none;
             border-radius: 8px;
-            font-size: 1.05rem;
+            font-size: 1.1rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
+            margin-top: 10px;
         }
 
         .btn-submit:hover {
             background-color: #7dd3fc;
-            box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+            box-shadow: 0 0 18px rgba(56, 189, 248, 0.45);
         }
 
         /* 🚨 결과 판넬 (기본 숨김) */
         .result-panel {
             display: none;
-            margin-top: 10px;
+            margin-top: 15px;
             border-radius: 12px;
             padding: 24px;
             animation: fadeIn 0.3s ease-in-out;
@@ -251,23 +258,19 @@
 </head>
 <body>
 
-    <!-- 🔝 상단 중앙 타이틀 -->
     <header>
         <h1>📡 통신 빅데이터 재식별 방지 시스템</h1>
     </header>
 
-    <!-- 🗂️ 메인 2분할 컨테이너 -->
     <div class="container">
         
-        <!-- ⬅️ 왼쪽: 시스템 안내 및 현황 대시보드 -->
         <div class="left-side panel">
             <div class="intro-box">
                 <h2>시스템 개요</h2>
-                <p>본 시스템은 개인정보보호위원회의 가이드라인을 준수하여, 통신 유동인구 빅데이터의 가명처리 적정성을 평가하고 안전한 데이터 반출을 제어하는 <strong>[재식별 방지 시스템]</strong>입니다.</p>
+                <p>본 시스템은 개인정보보호위원회의 가이드라인을 준수하여, 통신 유동인구 빅데이터의 가명처리 적정성을 평가하고 안전한 데이터 반출을 제어하는 <strong>재식별 방지 시스템</strong>입니다.</p>
                 <p>연구 및 분석 목적으로 데이터 취득 신청 시, 조회된 데이터의 표본이 3건 이하인 경우 타 정보와의 결합을 통한 개인 재식별 위험성이 존재한다고 판단하여 데이터를 원천 차단합니다.</p>
             </div>
 
-            <!-- 대시보드 카드 3개 -->
             <div class="status-container">
                 <div class="status-card">
                     <span class="label">보안 알고리즘</span>
@@ -284,48 +287,57 @@
             </div>
         </div>
 
-        <!-- ➡️ 오른쪽: 조건 검색 및 결과 출력 -->
         <div class="right-side panel">
-            <form id="searchForm">
+            <form id="searchForm" class="form-grid">
                 <div class="form-group">
                     <label for="region">공간 조건 (행정동)</label>
                     <select id="region">
                         <option value="행복동">행복동</option>
                         <option value="소망동">소망동</option>
                         <option value="기쁨동">기쁨동</option>
+                        <option value="행운동">행운동</option>
+                        <option value="사랑동">사랑동</option>
+                        <option value="우정동">우정동</option>
+                        <option value="희망동">희망동</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label for="timeSlot">시간 조건 (시간대)</label>
+                    <label for="timeSlot">시간 조건 (조회 시간대)</label>
                     <select id="timeSlot">
                         <option value="새벽 시간대 (04:00~06:00)">새벽 시간대 (04:00~06:00)</option>
-                        <option value="출근 시간대 (07:00~09:00)">출근 시간대 (07:00~09:00)</option>
+                        <option value="출근 시간대 (7:00~10:00)">출근 시간대 (7:00~10:00)</option>
+                        <option value="낮 시간대 (10:00~12:00)">낮 시간대 (10:00~12:00)</option>
+                        <option value="점심 시간대 (12:00~14:00)">점심 시간대 (12:00~14:00)</option>
+                        <option value="오후 시간대 (14:00~17:00)">오후 시간대 (14:00~17:00)</option>
                         <option value="퇴근 시간대 (17:00~19:00)">퇴근 시간대 (17:00~19:00)</option>
+                        <option value="밤 시간대 (19:00~24:00)">밤 시간대 (19:00~24:00)</option>
+                        <option value="심야 시간대 (00:00~04:00)">심야 시간대 (00:00~04:00)</option>
                     </select>
                 </div>
 
                 <div class="form-group">
                     <label for="ageGroup">인구 조건 (연령대)</label>
                     <select id="ageGroup">
+                        <option value="10대">10대</option>
                         <option value="20대">20대</option>
                         <option value="30대">30대</option>
-                        <option value="40-50대">40-50대</option>
+                        <option value="4-50대">4-50대</option>
+                        <option value="60대 이상">60대 이상</option>
                     </select>
                 </div>
 
                 <div class="form-group">
                     <label for="gender">인구 조건 (성별)</label>
                     <select id="gender">
-                        <option value="남자">남자</option>
                         <option value="여자">여자</option>
+                        <option value="남자">남자</option>
                     </select>
                 </div>
 
                 <button type="submit" class="btn-submit">가명 데이터 파일 반출 승인 요청</button>
             </form>
 
-            <!-- 🚨 실시간 결과창 판넬 (자바스크립트가 동적으로 제어함) -->
             <div id="resultPanel" class="result-panel panel-blocked">
                 <h3 id="resultTitle">⚠️ 시스템 연결 대기 중</h3>
                 <div id="resultContent">
@@ -336,7 +348,6 @@
 
     </div>
 
-    <!-- 🛠️ 실시간 백엔드 연동 & 스위칭 자바스크립트 소스 -->
     <script>
         document.getElementById('searchForm').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -345,7 +356,7 @@
             const resultTitle = document.getElementById('resultTitle');
             const resultContent = document.getElementById('resultContent');
 
-            // 1. Flask 백엔드 API 서버로 사용자가 고른 조건 전송
+            // 1. 사용자가 고른 촘촘한 4대 조건을 백엔드로 전송
             fetch('http://127.0.0.1:5000/api/check-security', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -358,21 +369,19 @@
             })
             .then(response => response.json())
             .then(data => {
-                // 2. 서버 통신 성공 시 화면 스위치 가동
                 resultPanel.style.display = 'block';
 
                 if (data.status === 'blocked') {
-                    // [CASE 1] 3명 이하 🚨 -> 빨간색 경고창 처리
+                    // [CASE 1] 3명 이하 🚨 -> 빨간색 경고창 모드 활성화
                     resultPanel.className = 'result-panel panel-blocked';
                     resultTitle.innerText = '🚨 데이터 반출 원천 차단 (위험 감지)';
                     resultContent.innerHTML = `<p>${data.message}</p>`;
 
                 } else if (data.status === 'success') {
-                    // [CASE 2] 4명 이상 ✅ -> 초록색 성공창 + 표(Table) 그리기
+                    // [CASE 2] 4명 이상 ✅ -> 초록색 성공창 모드 활성화 및 표 동적 렌더링
                     resultPanel.className = 'result-panel panel-success';
                     resultTitle.innerText = '✅ 가명 데이터 반출 승인 (안전)';
                     
-                    // 백엔드에서 받아온 가명 ID 리스트로 실시간 표(HTML) 조립
                     let tableHtml = `
                         <p style="color: #10b981; margin-bottom: 10px;">K-익명성 검증 통과 (조회 결과: ${data.count}건)</p>
                         <table class="data-table">
@@ -388,7 +397,6 @@
                             <tbody>
                     `;
                     
-                    // 한 줄씩 표에 데이터 박아넣기
                     data.rows.forEach(row => {
                         tableHtml += `
                             <tr>
@@ -406,7 +414,7 @@
                 }
             })
             .catch(error => {
-                // [예외 처리] 아직 백엔드 서버가 켜지지 않았을 때 에러 가로채기
+                // [예외 처리] Flask 서버 오프라인 시 에러 처리
                 resultPanel.style.display = 'block';
                 resultPanel.className = 'result-panel panel-blocked';
                 resultTitle.innerText = '❌ 서버 연동 오류';
