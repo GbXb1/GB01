@@ -233,6 +233,21 @@
             gap: 8px;
         }
 
+        /* ✨ [CASE 3] 추가: 조회 결과 없음(0건) 경고창 스타일 */
+        .panel-nodata {
+            background-color: rgba(234, 179, 8, 0.1); /* 연한 노란색 톤 */
+            border: 1px solid #eab308;
+            color: #fef08a;
+        }
+
+        .panel-nodata h3 {
+            color: #eab308;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         /* 📊 가명 ID 출력 테이블 디자인 */
         .data-table {
             width: 100%;
@@ -277,7 +292,7 @@
         <div class="left-side panel">
             <div class="intro-box">
                 <h2>시스템 개요</h2>
-                <p>본 시스템은 개인정보보호위원회의 가이드라인을 준수하여, 통신 유동인구 빅데이터의 가명처리 적정성을 평가하고 안전한 데이터 반출을 제어하는 <strong>[재식별 방지 시스템]</strong>입니다.</p>
+                <p>본 시스템은 개인정보보호위원회의 가이드라인을 준수하여, 통신 유동인구 빅데이터의 가명처리 적정성을 평가하고 안전한 데이터 반출을 제어하는 <strong>재식별 방지 시스템</strong>입니다.</p>
                 <p>연구 및 분석 목적으로 데이터 취득 신청 시, 조회된 데이터의 표본이 3건 이하인 경우 타 정보와의 결합을 통한 개인 재식별 위험성이 존재한다고 판단하여 데이터를 원천 차단합니다.</p>
             </div>
 
@@ -300,7 +315,7 @@
         <div class="right-side panel">
             <form id="searchForm" class="form-grid">
                 <div class="form-group">
-                    <label for="region">공간 조건 (행정동)</label>
+                    <label for="region">행정동</label>
                     <select id="region">
                         <option value="행복동">행복동</option>
                         <option value="소망동">소망동</option>
@@ -313,7 +328,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="timeSlot">시간 조건 (조회 시간대)</label>
+                    <label for="timeSlot">시간대</label>
                     <select id="timeSlot">
                         <option value="새벽 시간대 (04:00~06:00)">새벽 시간대 (04:00~06:00)</option>
                         <option value="출근 시간대 (7:00~10:00)">출근 시간대 (7:00~10:00)</option>
@@ -327,7 +342,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="ageGroup">인구 조건 (연령대)</label>
+                    <label for="ageGroup">연령대</label>
                     <select id="ageGroup">
                         <option value="10대">10대</option>
                         <option value="20대">20대</option>
@@ -338,7 +353,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="gender">인구 조건 (성별)</label>
+                    <label for="gender">성별</label>
                     <select id="gender">
                         <option value="여자">여자</option>
                         <option value="남자">남자</option>
@@ -383,13 +398,19 @@
                 resultPanel.style.display = 'block';
 
                 if (data.status === 'blocked') {
-                    // [CASE 1] 차단 위험 안내 작동
+                    // [CASE 1] 차단 위험 안내 작동 (빨간창)
                     resultPanel.className = 'result-panel panel-blocked';
                     resultTitle.innerText = '🚨 데이터 반출 원천 차단 (위험 감지)';
                     resultContent.innerHTML = `<p>${data.message}</p>`;
 
+                } else if (data.status === 'no_data') {
+                    // ✨ [CASE 3] 추가: 조회 결과 0건 안내 작동 (노란창)
+                    resultPanel.className = 'result-panel panel-nodata';
+                    resultTitle.innerText = '⚠ 조회 결과 없음';
+                    resultContent.innerHTML = `<p>${data.message}</p>`;
+
                 } else if (data.status === 'success') {
-                    // [CASE 2] 반출 승인 및 표 자동 렌더링 작동
+                    // [CASE 2] 반출 승인 및 표 자동 렌더링 작동 (초록창)
                     resultPanel.className = 'result-panel panel-success';
                     resultTitle.innerText = '✅ 가명 데이터 반출 승인 (안전)';
                     
