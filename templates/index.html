@@ -5,41 +5,45 @@
     <title>K-Anonymity Auditor</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-50 min-h-screen flex items-center justify-center p-6">
-    <div class="max-w-4xl w-full bg-white p-10 rounded-2xl shadow-sm border border-slate-200 flex gap-12">
+<body class="bg-slate-50 min-h-screen flex items-center justify-center p-8">
+    
+    <div class="max-w-6xl w-full bg-white p-14 rounded-3xl shadow-md border border-slate-200 flex gap-16">
         
-        <div class="w-1/2">
-            <h1 class="text-xl font-black text-slate-900 mb-2">K-Anonymity Auditor</h1>
-            <p class="text-sm text-slate-500 mb-8 leading-relaxed">데이터 배포 전, 재식별 위험을 통계적으로 자동 진단하는 보안 게이트웨이입니다.</p>
+        <div class="w-1/2 flex flex-col justify-between">
+            <div>
+                <h1 class="text-3xl font-black text-slate-900 mb-3 tracking-tight">K-Anonymity Auditor</h1>
+                <p class="text-base text-slate-500 mb-10 leading-relaxed">데이터 배포 전, 재식별 위험을 통계적으로 자동 진단하는 보안 게이트웨이입니다.</p>
+                
+                <div class="space-y-8">
+                    <div class="p-5 bg-slate-50/80 rounded-2xl border border-slate-100">
+                        <h3 class="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2">🛡️ 1순위: K-익명성 (K=3)</h3>
+                        <p class="text-sm text-slate-500 leading-relaxed">동일한 특성을 가진 데이터 조합이 3명 미만인 레코드는 재식별 위험군으로 감지하여 전체 통계 데이터로 환산합니다.</p>
+                    </div>
+                    <div class="p-5 bg-slate-50/80 rounded-2xl border border-slate-100">
+                        <h3 class="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2">📉 2순위: 데이터 결측치율</h3>
+                        <p class="text-sm text-slate-500 leading-relaxed">전체 데이터셋의 무결성을 검증하며, 빈 값(Null)의 비율을 5% 기준으로 정밀 평가합니다.</p>
+                    </div>
+                </div>
+            </div>
             
-            <div class="space-y-6">
-                <div>
-                    <h3 class="text-sm font-bold text-slate-800 mb-1">🛡️ 1순위: K-익명성 (K=3)</h3>
-                    <p class="text-xs text-slate-500">동일한 특성을 가진 조합이 3명 미만인 레코드는 식별 위험군으로 분류하여 전체 통계화합니다.</p>
-                </div>
-                <div>
-                    <h3 class="text-sm font-bold text-slate-800 mb-1">📉 2순위: 데이터 결측치율</h3>
-                    <p class="text-xs text-slate-500">전체 데이터셋의 무결성을 검증하며, 데이터 품질을 5% 결측치 기준으로 평가합니다.</p>
-                </div>
-                <div class="pt-4 border-t border-slate-100">
-                    <p class="text-[10px] text-slate-400 italic">※ 개인정보보호 정책: 개별 식별 정보는 절대 출력되지 않으며, 오직 통계적 위험 수치(%)만 제공합니다.</p>
-                </div>
+            <div class="pt-6 border-t border-slate-100 mt-8">
+                <p class="text-xs text-slate-400 font-medium italic">※ 개인정보보호 정책: 원본 레코드의 개별 데이터 내용은 일절 출력되지 않으며, 오직 전체 보안 안정성 수치(%)만 제공합니다.</p>
             </div>
         </div>
 
-        <div class="w-1/2 flex flex-col justify-center">
+        <div class="w-1/2 flex flex-col justify-center border-l border-slate-100 pl-16">
             <div class="mb-8">
-                <label class="block text-xs font-bold text-slate-700 mb-2">심사할 CSV 파일 업로드</label>
-                <input type="file" id="csvFile" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer">
+                <label class="block text-sm font-bold text-slate-700 mb-3 tracking-wide">심사할 CSV 파일 업로드</label>
+                <input type="file" id="csvFile" class="block w-full text-sm text-slate-500 file:mr-5 file:py-3 file:px-6 file:rounded-full file:border-0 file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer font-medium">
             </div>
             
-            <button onclick="audit()" class="w-full bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-slate-800 transition-all">
-                심사 시작
+            <button onclick="audit()" class="w-full bg-slate-900 text-white py-4 rounded-2xl text-base font-bold hover:bg-slate-800 active:scale-[0.99] transition-all shadow-sm">
+                보안 등급 심사 시작
             </button>
 
-            <div id="result" class="hidden mt-8 p-6 border rounded-2xl text-center">
-                <div id="gradeBadge" class="text-4xl font-black mb-2"></div>
-                <p id="riskSummary" class="text-sm font-medium text-slate-700"></p>
+            <div id="result" class="hidden mt-10 p-8 border rounded-2xl text-center shadow-inner">
+                <div id="gradeBadge" class="text-5xl font-black mb-3 tracking-wider"></div>
+                <p id="riskSummary" class="text-base font-semibold text-slate-700 leading-relaxed"></p>
             </div>
         </div>
     </div>
@@ -47,23 +51,44 @@
     <script>
         async function audit() {
             const file = document.getElementById('csvFile').files[0];
-            if(!file) return alert('파일을 선택해주세요.');
+            if(!file) return alert('심사할 CSV 파일을 선택해주세요.');
 
             const formData = new FormData();
             formData.append('file', file);
             
-            const res = await fetch('/api/audit-dataset', { method: 'POST', body: formData });
-            const data = await res.json();
-            
+            // 로딩 상태 연출
             const resDiv = document.getElementById('result');
-            const gradeBadge = document.getElementById('gradeBadge');
-            const riskSummary = document.getElementById('riskSummary');
-
             resDiv.classList.remove('hidden');
-            gradeBadge.innerText = `Grade ${data.grade}`;
-            riskSummary.innerText = `전체 데이터의 ${data.risk_ratio}%가 식별 위험군입니다.`;
-            
-            resDiv.className = `mt-8 p-6 border rounded-2xl text-center ${data.grade === 'S' || data.grade === 'A' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`;
+            resDiv.className = "mt-10 p-8 border rounded-2xl text-center bg-slate-50 text-slate-500 font-medium text-sm";
+            resDiv.innerHTML = "🔄 파이썬 Pandas 엔진 분석 및 Firebase 저장 중...";
+
+            try {
+                const res = await fetch('/api/audit-dataset', { method: 'POST', body: formData });
+                const data = await res.json();
+                
+                if(data.error) {
+                    alert(data.error);
+                    resDiv.classList.add('hidden');
+                    return;
+                }
+
+                // 결과 바인딩 및 테마 스위칭
+                resDiv.innerHTML = `<div id="gradeBadge" class="text-5xl font-black mb-3 tracking-wider"></div><p id="riskSummary" class="text-base font-semibold leading-relaxed"></p>`;
+                const gradeBadge = document.getElementById('gradeBadge');
+                const riskSummary = document.getElementById('riskSummary');
+
+                gradeBadge.innerText = `등급: ${data.grade} Grade`;
+                riskSummary.innerText = `전체 데이터셋 중 개인 식별 위험군은 [ ${data.risk_ratio}% ] 입니다.`;
+                
+                if (data.grade === 'S' || data.grade === 'A') {
+                    resDiv.className = "mt-10 p-8 border rounded-2xl text-center bg-emerald-50 border-emerald-200 text-emerald-800 shadow-sm";
+                } else {
+                    resDiv.className = "mt-10 p-8 border rounded-2xl text-center bg-rose-50 border-rose-200 text-rose-800 shadow-sm";
+                }
+            } catch (error) {
+                alert('서버 연결 실패');
+                resDiv.classList.add('hidden');
+            }
         }
     </script>
 </body>
