@@ -48,7 +48,18 @@ def audit_dataset():
 
     try:
         # 1. 어떤 컬럼 구조든 다 읽어들이는 가변형 Pandas 데이터 수용
-        df = pd.read_csv(file)
+        try:
+            # 일반적인 UTF-8 포맷으로 먼저 시도
+            df = pd.read_csv(file)
+        except UnicodeDecodeError:
+            # 한글 깨짐 에러(EUC-KR/CP949) 발생 시 자동으로 공공기관 포맷으로 우회
+            file.seek(0)  # 파일 읽기 위치를 처음으로 리셋
+            try:
+                df = pd.read_csv(file, encoding='cp949')
+            except UnicodeDecodeError:
+                file.seek(0)
+                df = pd.read_csv(file, encoding='euc-kr')
+                
         total_rows = len(df)
         
         if total_rows == 0:
