@@ -41,9 +41,9 @@
                 보안 등급 심사 시작
             </button>
 
-            <div id="result" class="hidden mt-10 p-8 border rounded-2xl text-center shadow-inner">
+            <div id="result" class="hidden mt-10 p-8 border rounded-2xl text-center shadow-sm">
                 <div id="gradeBadge" class="text-5xl font-black mb-3 tracking-wider"></div>
-                <p id="riskSummary" class="text-base font-semibold text-slate-700 leading-relaxed"></p>
+                <p id="riskSummary" class="text-base font-semibold leading-relaxed"></p>
             </div>
         </div>
     </div>
@@ -57,8 +57,10 @@
             formData.append('file', file);
             
             const resDiv = document.getElementById('result');
+            
+            // 1. 로딩 상태 표시
             resDiv.classList.remove('hidden');
-            resDiv.className = "mt-10 p-8 border rounded-2xl text-center bg-slate-50 text-slate-500 font-medium text-sm";
+            resDiv.className = "mt-10 p-8 border rounded-2xl text-center bg-slate-50 border-slate-200 text-slate-500 font-medium text-sm";
             resDiv.innerHTML = "🔄 파이썬 Pandas 엔진 데이터 실시간 분석 중...";
 
             try {
@@ -71,20 +73,21 @@
                     return;
                 }
 
-                resDiv.innerHTML = `<div id="gradeBadge" class="text-5xl font-black mb-3 tracking-wider"></div><p id="riskSummary" class="text-base font-semibold leading-relaxed"></p>`;
-                const gradeBadge = document.getElementById('gradeBadge');
-                const riskSummary = document.getElementById('riskSummary');
-
-                gradeBadge.innerText = `등급: ${data.grade} Grade`;
-                riskSummary.innerText = `전체 데이터셋 중 개인 식별 위험군은 [ ${data.risk_ratio}% ] 입니다.`;
-                
+                // 2. 등급별 색상 스타일을 먼저 '강력하게' 주입
                 if (data.grade === 'S' || data.grade === 'A') {
-                    resDiv.className = "mt-10 p-8 border rounded-2xl text-center bg-emerald-50 border-emerald-200 text-emerald-800 shadow-sm";
+                    resDiv.className = "mt-10 p-8 border rounded-2xl text-center bg-emerald-50 border-emerald-200 text-emerald-800 shadow-sm animate-fade-in";
                 } else if (data.grade === 'B') {
-                    resDiv.className = "mt-10 p-8 border rounded-2xl text-center bg-amber-50 border-amber-200 text-amber-800 shadow-sm";
+                    resDiv.className = "mt-10 p-8 border rounded-2xl text-center bg-amber-50 border-amber-200 text-amber-800 shadow-sm animate-fade-in";
                 } else {
-                    resDiv.className = "mt-10 p-8 border rounded-2xl text-center bg-rose-50 border-rose-200 text-rose-800 shadow-sm";
+                    resDiv.className = "mt-10 p-8 border rounded-2xl text-center bg-rose-50 border-rose-200 text-rose-800 shadow-sm animate-fade-in";
                 }
+
+                // 3. 내부 글자 주입 (백엔드에서 받은 진짜 등급을 대입)
+                resDiv.innerHTML = `
+                    <div class="text-5xl font-black mb-3 tracking-wider">등급: ${data.grade} Grade</div>
+                    <p class="text-base font-semibold leading-relaxed">전체 데이터셋 중 개인 식별 위험군은 [ ${data.risk_ratio}% ] 입니다.</p>
+                `;
+
             } catch (error) {
                 alert('서버 연결 실패');
                 resDiv.classList.add('hidden');
