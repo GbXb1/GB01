@@ -16,22 +16,37 @@
                 
                 <div class="space-y-8">
                     <div class="p-5 bg-slate-50/80 rounded-2xl border border-slate-100">
-                        <h3 class="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2">🛡️ 1순위: K-익명성 (K=3)</h3>
-                        <p class="text-sm text-slate-500 leading-relaxed">동일한 특성을 가진 데이터 조합이 3명 미만인 레코드는 재식별 위험군으로 감지하여 전체 통계 데이터로 환산합니다.</p>
+                        <h3 class="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2">🛡️ 1순위: K-익명성 기준</h3>
+                        <p class="text-sm text-slate-500 leading-relaxed">선택한 K값 이하의 동일 조건을 가진 취약 레코드를 감지합니다. (완화된 실무형 기준 적용)</p>
                     </div>
                     <div class="p-5 bg-slate-50/80 rounded-2xl border border-slate-100">
                         <h3 class="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2">📉 2순위: 데이터 결측치율</h3>
-                        <p class="text-sm text-slate-500 leading-relaxed">전체 데이터셋의 무결성을 검증하며, 빈 값(Null)의 비율을 5% 기준으로 정밀 평가합니다.</p>
+                        <p class="text-sm text-slate-500 leading-relaxed">전체 데이터셋의 무결성을 검증하며, 빈 값(Null)의 비율을 5% 기준으로 평가합니다.</p>
                     </div>
                 </div>
             </div>
             
             <div class="pt-6 border-t border-slate-100 mt-8">
-                <p class="text-xs text-slate-400 font-medium italic">※ 개인정보보호 정책: 원본 레코드의 개별 데이터 내용은 일절 출력되지 않으며, 오직 전체 보안 안정성 수치(%)만 제공합니다.</p>
+                <p class="text-xs text-slate-400 font-medium italic">※ 완화 버전: 실제 데이터의 가치를 보존하기 위해 실무 기업 배포 가이드라인에 맞춘 완화 등급이 적용됩니다.</p>
             </div>
         </div>
 
         <div class="w-1/2 flex flex-col justify-center border-l border-slate-100 pl-16">
+            
+            <div class="mb-6 bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-sm font-bold text-slate-700">🛡️ 보안 강도 설정 (K-익명성 값)</label>
+                    <span id="kValueDisplay" class="text-lg font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-md">K = 3 (기본)</span>
+                </div>
+                <input type="range" id="kValue" min="2" max="5" value="3" oninput="updateKLabel(this.value)" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
+                <div class="flex justify-between text-[11px] text-slate-400 mt-1">
+                    <span>K=2 (완화/통계용)</span>
+                    <span>K=3 (표준)</span>
+                    <span>K=4 (강화)</span>
+                    <span>K=5 (초고강도)</span>
+                </div>
+            </div>
+
             <div class="mb-8">
                 <label class="block text-sm font-bold text-slate-700 mb-3 tracking-wide">심사할 CSV 파일 업로드</label>
                 <input type="file" id="csvFile" class="block w-full text-sm text-slate-500 file:mr-5 file:py-3 file:px-6 file:rounded-full file:border-0 file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer font-medium">
@@ -49,14 +64,19 @@
     </div>
 
     <script>
+        function updateKLabel(val) {
+            document.getElementById('kValueDisplay').innerText = `K = ${val} ` + (val == 2 ? '(완화)' : val == 3 ? '(기본)' : '(강화)');
+        }
+
         async function audit() {
             const file = document.getElementById('csvFile').files[0];
+            const kValue = document.getElementById('kValue').value;
             if(!file) return alert('심사할 CSV 파일을 선택해주세요.');
 
             const formData = new FormData();
             formData.append('file', file);
+            formData.append('k_value', kValue); // 선택된 K값을 백엔드로 전송
             
-            // 로딩 상태 연출
             const resDiv = document.getElementById('result');
             resDiv.classList.remove('hidden');
             resDiv.className = "mt-10 p-8 border rounded-2xl text-center bg-slate-50 text-slate-500 font-medium text-sm";
@@ -72,7 +92,6 @@
                     return;
                 }
 
-                // 결과 바인딩 및 테마 스위칭
                 resDiv.innerHTML = `<div id="gradeBadge" class="text-5xl font-black mb-3 tracking-wider"></div><p id="riskSummary" class="text-base font-semibold leading-relaxed"></p>`;
                 const gradeBadge = document.getElementById('gradeBadge');
                 const riskSummary = document.getElementById('riskSummary');
@@ -82,6 +101,8 @@
                 
                 if (data.grade === 'S' || data.grade === 'A') {
                     resDiv.className = "mt-10 p-8 border rounded-2xl text-center bg-emerald-50 border-emerald-200 text-emerald-800 shadow-sm";
+                } else if (data.grade === 'B') {
+                    resDiv.className = "mt-10 p-8 border rounded-2xl text-center bg-amber-50 border-amber-200 text-amber-800 shadow-sm";
                 } else {
                     resDiv.className = "mt-10 p-8 border rounded-2xl text-center bg-rose-50 border-rose-200 text-rose-800 shadow-sm";
                 }
