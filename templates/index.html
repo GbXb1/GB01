@@ -16,8 +16,8 @@
                 
                 <div class="space-y-8">
                     <div class="p-5 bg-slate-50/80 rounded-2xl border border-slate-100">
-                        <h3 class="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2">🛡️ 1순위: K-익명성 기준</h3>
-                        <p class="text-sm text-slate-500 leading-relaxed">선택한 K값 이하의 동일 조건을 가진 취약 레코드를 감지합니다. (완화된 실무형 기준 적용)</p>
+                        <h3 class="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2">🛡️ 1순위: K-익명성 기준 (K=3)</h3>
+                        <p class="text-sm text-slate-500 leading-relaxed">동일한 특성을 가진 데이터 조합이 3명 미만인 취약 레코드를 감지합니다. (실무형 완화 기준 적용)</p>
                     </div>
                     <div class="p-5 bg-slate-50/80 rounded-2xl border border-slate-100">
                         <h3 class="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2">📉 2순위: 데이터 결측치율</h3>
@@ -32,21 +32,6 @@
         </div>
 
         <div class="w-1/2 flex flex-col justify-center border-l border-slate-100 pl-16">
-            
-            <div class="mb-6 bg-slate-50 p-5 rounded-2xl border border-slate-100">
-                <div class="flex justify-between items-center mb-2">
-                    <label class="text-sm font-bold text-slate-700">🛡️ 보안 강도 설정 (K-익명성 값)</label>
-                    <span id="kValueDisplay" class="text-lg font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-md">K = 3 (기본)</span>
-                </div>
-                <input type="range" id="kValue" min="2" max="5" value="3" oninput="updateKLabel(this.value)" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
-                <div class="flex justify-between text-[11px] text-slate-400 mt-1">
-                    <span>K=2 (완화/통계용)</span>
-                    <span>K=3 (표준)</span>
-                    <span>K=4 (강화)</span>
-                    <span>K=5 (초고강도)</span>
-                </div>
-            </div>
-
             <div class="mb-8">
                 <label class="block text-sm font-bold text-slate-700 mb-3 tracking-wide">심사할 CSV 파일 업로드</label>
                 <input type="file" id="csvFile" class="block w-full text-sm text-slate-500 file:mr-5 file:py-3 file:px-6 file:rounded-full file:border-0 file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer font-medium">
@@ -64,23 +49,17 @@
     </div>
 
     <script>
-        function updateKLabel(val) {
-            document.getElementById('kValueDisplay').innerText = `K = ${val} ` + (val == 2 ? '(완화)' : val == 3 ? '(기본)' : '(강화)');
-        }
-
         async function audit() {
             const file = document.getElementById('csvFile').files[0];
-            const kValue = document.getElementById('kValue').value;
             if(!file) return alert('심사할 CSV 파일을 선택해주세요.');
 
             const formData = new FormData();
             formData.append('file', file);
-            formData.append('k_value', kValue); // 선택된 K값을 백엔드로 전송
             
             const resDiv = document.getElementById('result');
             resDiv.classList.remove('hidden');
             resDiv.className = "mt-10 p-8 border rounded-2xl text-center bg-slate-50 text-slate-500 font-medium text-sm";
-            resDiv.innerHTML = "🔄 파이썬 Pandas 엔진 분석 및 Firebase 저장 중...";
+            resDiv.innerHTML = "🔄 파이썬 Pandas 엔진 데이터 실시간 분석 중...";
 
             try {
                 const res = await fetch('/api/audit-dataset', { method: 'POST', body: formData });
