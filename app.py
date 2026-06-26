@@ -1,6 +1,21 @@
 from flask import Flask, render_template, request, jsonify
 import pandas as pd
 from datetime import datetime
+import uuid
+
+# [추가된 기능] 파이어베이스 라이브러리 연동
+import firebase_admin
+from firebase_admin import credentials, firestore
+
+# 파이어베이스 초기화 (서버 재시작 시 중복 방지)
+try:
+    if not firebase_admin._apps:
+        cred = credentials.Certificate('firebase_key.json')
+        firebase_admin.initialize_app(cred)
+    db = firestore.client()
+except Exception as e:
+    print(f"🔥 Firebase 연결 에러: {e}")
+    db = None
 
 app = Flask(__name__)
 
@@ -14,9 +29,13 @@ def audit_dataset():
         return jsonify({'error': '업로드된 파일이 없습니다.'}), 400
         
     file = request.files['file']
+    
+    # [추가된 기능] 프론트엔드 체크리스트 값 받아오기
+    has_personal_info = request.form.get('has_personal_info') == 'true'
+    data_type = request.form.get('data_type')
 
     try:
-        # 1. 인코딩 에러 및 공백 문제를 완전 방어하며 CSV 로드
+        # 기존 훌륭한 인코딩 방어 로직 유지
         try:
             df = pd.read_csv(file)
         except:
@@ -27,7 +46,6 @@ def audit_dataset():
                 file.seek(0)
                 df = pd.read_csv(file, encoding='euc-kr')
         
-        # 컬럼명과 문자열 데이터의 앞뒤 불필요한 공백 제거 (엑셀 변환 시 발생 방지)
         df.columns = df.columns.str.strip()
         for col in df.select_dtypes(include=['object']).columns:
             df[col] = df[col].astype(str).str.strip()
@@ -36,38 +54,67 @@ def audit_dataset():
         if total_rows == 0:
             return jsonify({'error': '데이터셋에 행이 존재하지 않습니다.'}), 400
 
-        # 2. 🛡️ 진짜 K-익명성(K=3) 위험도 계산
-        # 모든 컬럼의 조합을 기준으로 중복된 행의 개수를 세어 줍니다.
-        group_counts = df.groupby(list(df.columns)).size().reset_index(name='count')
-        
-        # 동일한 특성을 가진 사람이 3명 미만(1명 또는 2명)인 그룹이 바로 '위험군'입니다.
-        risk_groups = group_counts[group_counts['count'] < 3]
-        risk_rows_count = int(risk_groups['count'].sum())
-        
-        # 위험도 백분율 계산
-        risk_ratio = round((risk_rows_count / total_rows) * 100, 1)
+        # ==========================================
+        # 🛡️ 1순위: K-익명성(K=3) 위험도 (체크리스트 연동)
+        # ==========================================
+        if has_personal_info:
+            group_counts = df.groupby(list(df.columns)).size().reset_index(name='count')
+            risk_groups = group_counts[group_counts['count'] < 3]
+            risk_rows_count = int(risk_groups['count'].sum())
+            risk_ratio = round((risk_rows_count / total_rows) * 100, 1)
+        else:
+            # 환경/통계 데이터 등 개인정보가 없다고 체크된 경우 위험도 0%로 패스
+            risk_ratio = 0.0 
 
-        # 3. 📉 데이터 결측치율(Null) 계산
+        # ==========================================
+        # 📉 2순위: 데이터 결측치율(완결성) 계산
+        # ==========================================
         total_cells = df.size
         null_cells = int(df.isnull().sum().sum())
         null_ratio = round((null_cells / total_cells) * 100, 1)
+        
+        # (기타 누락되었던 편향성, 유효성 등은 백엔드 확장을 위해 자리는 비워두고, 
+        # 우선 기존에 짜신 완화된 등급 룰북을 그대로 반영합니다.)
 
-        # 4. 🏆 완화된 실무형 등급 커트라인 수식 그대로 적용
-        # S 등급: 위험도 5% 이하, 결측치 5% 미만
+        # ==========================================
+        # 🏆 기존 완화된 실무형 등급 산출
+        # ==========================================
         if risk_ratio <= 5.0 and null_ratio < 5.0:
             grade = 'S'
-        # A 등급: 위험도 25% 이하, 결측치 10% 미만
         elif risk_ratio <= 25.0 and null_ratio < 10.0:
             grade = 'A'
-        # B 등급: 위험도 55% 이하
         elif risk_ratio <= 55.0:
             grade = 'B'
-        # C 등급: 위험도 55% 초과 (배포 거부)
         else:
             grade = 'C'
 
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        
+
+        # ==========================================
+        # 💾 [추가된 기능] 파이어베이스 Firestore DB 저장 로직
+        # ==========================================
+        saved_to_db = False
+        if db is not None:
+            doc_id = f"eval_{datetime.now().strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex[:4]}"
+            eval_data = {
+                "document_id": doc_id,
+                "meta_info": {
+                    "file_name": file.filename,
+                    "uploaded_at": current_time,
+                    "checklist": {
+                        "has_personal_info": has_personal_info,
+                        "data_type": data_type
+                    }
+                },
+                "results": {
+                    "risk_ratio_percent": risk_ratio,
+                    "null_ratio_percent": null_ratio,
+                    "final_grade": grade
+                }
+            }
+            db.collection("evaluations").document(doc_id).set(eval_data)
+            saved_to_db = True
+
         return jsonify({
             'filename': file.filename,
             'audit_time': current_time,
@@ -75,11 +122,12 @@ def audit_dataset():
             'risk_ratio': risk_ratio,
             'null_ratio': null_ratio,
             'grade': grade,
-            'applied_k': 3
+            'applied_k': 3,
+            'saved_to_db': saved_to_db  # DB 저장 성공 여부를 프론트로 전달
         })
 
     except Exception as e:
-        return jsonify({'error': f'파일 연산 중 진짜 에러 발생: {str(e)}'}), 500
+        return jsonify({'error': f'파일 연산 중 에러 발생: {str(e)}'}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5001)
+    app.run(debug=True, port=5000)
