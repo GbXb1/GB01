@@ -1,21 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 import pandas as pd
 from datetime import datetime
-import uuid
-
-# [추가된 기능] 파이어베이스 라이브러리 연동
-import firebase_admin
-from firebase_admin import credentials, firestore
-
-# 파이어베이스 초기화 (서버 재시작 시 중복 방지)
-try:
-    if not firebase_admin._apps:
-        cred = credentials.Certificate('firebase_key.json')
-        firebase_admin.initialize_app(cred)
-    db = firestore.client()
-except Exception as e:
-    print(f"🔥 Firebase 연결 에러: {e}")
-    db = None
 
 app = Flask(__name__)
 
@@ -29,13 +14,10 @@ def audit_dataset():
         return jsonify({'error': '업로드된 파일이 없습니다.'}), 400
         
     file = request.files['file']
-    
-    # [추가된 기능] 프론트엔드 체크리스트 값 받아오기
-    has_personal_info = request.form.get('has_personal_info') == 'true'
-    data_type = request.form.get('data_type')
+    has_pii = request.form.get('has_pii', 'no') # 프론트엔드 선택창 값 수신
 
     try:
-        # 기존 훌륭한 인코딩 방어 로직 유지
+        # 인코딩 방어 적용하며 CSV 로드
         try:
             df = pd.read_csv(file)
         except:
@@ -54,80 +36,86 @@ def audit_dataset():
         if total_rows == 0:
             return jsonify({'error': '데이터셋에 행이 존재하지 않습니다.'}), 400
 
-        # ==========================================
-        # 🛡️ 1순위: K-익명성(K=3) 위험도 (체크리스트 연동)
-        # ==========================================
-        if has_personal_info:
-            group_counts = df.groupby(list(df.columns)).size().reset_index(name='count')
-            risk_groups = group_counts[group_counts['count'] < 3]
-            risk_rows_count = int(risk_groups['count'].sum())
-            risk_ratio = round((risk_rows_count / total_rows) * 100, 1)
-        else:
-            # 환경/통계 데이터 등 개인정보가 없다고 체크된 경우 위험도 0%로 패스
-            risk_ratio = 0.0 
+        # -------------------------------------------------------------
+        # 📊 [진짜 연산] 6대 데이터 보안 심사 기준 알고리즘
+        # -------------------------------------------------------------
+        
+        # [기준 1] K-익명성 위험도 (K=3)
+        group_counts = df.groupby(list(df.columns)).size().reset_index(name='count')
+        risk_groups = group_counts[group_counts['count'] < 3]
+        risk_rows_count = int(risk_groups['count'].sum())
+        risk_ratio = round((risk_rows_count / total_rows) * 100, 1)
 
-        # ==========================================
-        # 📉 2순위: 데이터 결측치율(완결성) 계산
-        # ==========================================
+        # [기준 2] 데이터 결측치율
         total_cells = df.size
         null_cells = int(df.isnull().sum().sum())
         null_ratio = round((null_cells / total_cells) * 100, 1)
+
+        # [기준 3] 고유식별정보(PII) 컬럼 검출율
+        pii_keywords = ['주민', '전화', '이름', '성명', '폰', '이메일', '주소', 'id', 'sn', 'email', 'phone', 'address']
+        pii_cols = [col for col in df.columns if any(kw in col.lower() for kw in pii_keywords)]
+        pii_ratio = round((len(pii_cols) / len(df.columns)) * 100, 1) if len(df.columns) > 0 else 0
+
+        # [기준 4] 데이터 통계적 이상치(Outlier) 비율 (IQR 방식)
+        num_cols = df.select_dtypes(include=['number']).columns
+        total_outliers = 0
+        total_numeric_elements = 0
+        for col in num_cols:
+            q1 = df[col].quantile(0.25)
+            q3 = df[col].quantile(0.75)
+            iqr = q3 - q1
+            outliers = df[(df[col] < q1 - 1.5 * iqr) | (df[col] > q3 + 1.5 * iqr)]
+            total_outliers += len(outliers)
+            total_numeric_elements += len(df)
+        outlier_ratio = round((total_outliers / total_numeric_elements) * 100, 1) if total_numeric_elements > 0 else 0
+
+        # [기준 5] 준식별자 결합 및 재식별 고유성 위험도
+        unique_combos = len(df.drop_duplicates())
+        combo_ratio = round((unique_combos / total_rows) * 100, 1)
+
+        # [기준 6] 데이터 표본 규모 적정성 (행 수 계산)
+        # (행 수가 너무 적으면 통계적 추론 및 재식별 위험이 매우 높음)
+
+        # -------------------------------------------------------------
+        # 🏆 6대 항목별 개별 등급 판정 로직
+        # -------------------------------------------------------------
+        # 1. K-익명성 등급
+        risk_grade = 'S' if risk_ratio <= 5.0 else 'A' if risk_ratio <= 25.0 else 'B' if risk_ratio <= 55.0 else 'C'
+        # 2. 결측치율 등급
+        null_grade = 'S' if null_ratio < 5.0 else 'A' if null_ratio < 10.0 else 'B' if null_ratio < 20.0 else 'C'
+        # 3. 개인정보 매칭 무결성 등급 (선택창 검증)
+        if has_pii == 'no' and pii_ratio > 0: pii_grade = 'C' # 없다고 했는데 발견됨 (감점)
+        elif has_pii == 'yes' and pii_ratio > 30.0: pii_grade = 'B' # 너무 날것의 개인정보가 많음
+        else: pii_grade = 'S'
+        # 4. 이상치 등급
+        outlier_grade = 'S' if outlier_ratio <= 3.0 else 'A' if outlier_ratio <= 8.0 else 'B' if outlier_ratio <= 15.0 else 'C'
+        # 5. 결합 위험도 등급
+        linkage_grade = 'S' if combo_ratio <= 20.0 else 'A' if combo_ratio <= 50.0 else 'B' if combo_ratio <= 80.0 else 'C'
+        # 6. 규모 적정성 등급
+        row_grade = 'S' if total_rows >= 1000 else 'A' if total_rows >= 300 else 'B' if total_rows >= 50 else 'C'
+
+        # ⚖️ 종합 점수 산출 (과목별 가중치 평균)
+        score_map = {'S': 4, 'A': 3, 'B': 2, 'C': 1}
+        total_score = (score_map[risk_grade]*2.5 + score_map[null_grade]*1.5 + score_map[pii_grade]*2.0 + score_map[outlier_grade] + score_map[linkage_grade]*1.5 + score_map[row_grade]) / 9.5
         
-        # (기타 누락되었던 편향성, 유효성 등은 백엔드 확장을 위해 자리는 비워두고, 
-        # 우선 기존에 짜신 완화된 등급 룰북을 그대로 반영합니다.)
-
-        # ==========================================
-        # 🏆 기존 완화된 실무형 등급 산출
-        # ==========================================
-        if risk_ratio <= 5.0 and null_ratio < 5.0:
-            grade = 'S'
-        elif risk_ratio <= 25.0 and null_ratio < 10.0:
-            grade = 'A'
-        elif risk_ratio <= 55.0:
-            grade = 'B'
-        else:
-            grade = 'C'
-
+        grade = 'S' if total_score >= 3.5 else 'A' if total_score >= 2.8 else 'B' if total_score >= 1.8 else 'C'
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-        # ==========================================
-        # 💾 [추가된 기능] 파이어베이스 Firestore DB 저장 로직
-        # ==========================================
-        saved_to_db = False
-        if db is not None:
-            doc_id = f"eval_{datetime.now().strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex[:4]}"
-            eval_data = {
-                "document_id": doc_id,
-                "meta_info": {
-                    "file_name": file.filename,
-                    "uploaded_at": current_time,
-                    "checklist": {
-                        "has_personal_info": has_personal_info,
-                        "data_type": data_type
-                    }
-                },
-                "results": {
-                    "risk_ratio_percent": risk_ratio,
-                    "null_ratio_percent": null_ratio,
-                    "final_grade": grade
-                }
-            }
-            db.collection("evaluations").document(doc_id).set(eval_data)
-            saved_to_db = True
-
+        
         return jsonify({
             'filename': file.filename,
             'audit_time': current_time,
-            'total_rows': total_rows,
-            'risk_ratio': risk_ratio,
-            'null_ratio': null_ratio,
             'grade': grade,
-            'applied_k': 3,
-            'saved_to_db': saved_to_db  # DB 저장 성공 여부를 프론트로 전달
+            # 6대 세부 심사 결과 데이터 송신
+            'risk_ratio': risk_ratio, 'risk_grade': risk_grade,
+            'null_ratio': null_ratio, 'null_grade': null_grade,
+            'pii_ratio': pii_ratio, 'pii_grade': pii_grade,
+            'outlier_ratio': outlier_ratio, 'outlier_grade': outlier_grade,
+            'combo_ratio': combo_ratio, 'linkage_grade': linkage_grade,
+            'total_rows': total_rows, 'row_grade': row_grade
         })
 
     except Exception as e:
-        return jsonify({'error': f'파일 연산 중 에러 발생: {str(e)}'}), 500
+        return jsonify({'error': f'분석 중 에러 발생: {str(e)}'}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5001)
